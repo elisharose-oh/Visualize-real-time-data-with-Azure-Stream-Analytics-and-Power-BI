@@ -1,0 +1,28 @@
+https://learn.microsoft.com/en-us/training/modules/visualize-real-time-data-azure-stream-analytics-power-bi/3-realtime-query
+
+#Create a query for real-time visualization
+#To send streaming data to Power BI, your Azure Stream Analytics job uses a query that writes its results to a Power BI output.
+#A simple query that forwards event data from an event hub directly to Power BI might look something like this:
+SELECT
+    EventEnqueuedUtcTime AS ReadingTime,
+    SensorID,
+    ReadingValue
+INTO
+    [powerbi-output]
+FROM
+    [eventhub-input] TIMESTAMP BY EventEnqueuedUtcTime
+    
+#Alternatively, you might use your query to filter and/or aggregate the data, sending only relevant or summarized data to the Power BI dataset
+#For example, the following query calculates the maximum reading for each sensor other than sensor 0 for each consecutive minute in which an event occurs.
+SELECT
+    DateAdd(second, -60, System.TimeStamp) AS StartTime,
+    System.TimeStamp AS EndTime,
+    SensorID,
+    MAX(ReadingValue) AS MaxReading
+INTO
+    [powerbi-output]
+FROM
+    [eventhub-input] TIMESTAMP BY EventEnqueuedUtcTime
+WHERE SensorID <> 0
+GROUP BY SensorID, TumblingWindow(second, 60)
+HAVING COUNT(*) > 1
